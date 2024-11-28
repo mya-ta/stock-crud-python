@@ -1,0 +1,36 @@
+{% extends "myapp/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Create Product</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ product_form|crispy }}
+    
+    <h3>Select Colors</h3>
+    {% for color in colors %}
+        <label>
+            <input type="checkbox" name="color" value="{{ color.id }}"> {{ color.name }}
+        </label><br>
+    {% endfor %}
+
+    <h3>Select Sizes</h3>
+    {% for size in sizes %}
+        <label>
+            <input type="checkbox" name="size" value="{{ size.id }}"> {{ size.name }}
+        </label><br>
+    {% endfor %}
+
+    <h3>Upload Image</h3>
+    <input type="file" name="image">
+    
+    <h3>Quantity</h3>
+    <input type="number" name="quantity" min="1" required>
+    
+    <h3>Price</h3>
+    <input type="number" name="price" step="0.01" required>
+
+    <button type="submit">Save Product</button>
+</form>
+{% endblock %}

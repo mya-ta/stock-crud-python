@@ -1,0 +1,30 @@
+{% extends "myapp/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Product List</h2>
+
+<table class="table table-striped table-bordered">
+    <thead class="font-weight-bold table-primary">
+        <tr>
+                <th>Product Name</th>
+                <th>Color</th>
+                <th>Size</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for variation in product_variations %}
+        <tr>
+            <td>{{ variation.product.name }}</td>
+            <td>{{ variation.color.name }}</td>
+            <td>{{ variation.size.name }}</td>
+            <td>{{ variation.quantity }}</td>
+            <td>{{ variation.price }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
