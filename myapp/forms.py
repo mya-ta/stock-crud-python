@@ -10,6 +10,7 @@ class ProductForm(forms.ModelForm):
     # keyword arguments
     def __init__(self, *args, **kwargs):
         super(ProductForm, self).__init__(*args, **kwargs)
+        self.fields['sku'].required = False
         self.fields['description'].required = False
 
 # Form for Product Variation (multi-select for color and size)
@@ -21,3 +22,8 @@ class ProductVariationForm(forms.ModelForm):
     class Meta:
         model = ProductVariation
         fields = ['product', 'image', 'quantity', 'price', 'color', 'size']
+
+    def __init__(self, *args, **kwargs):
+        super(ProductForm, self).__init__(*args, **kwargs)
+        self.fields['quantity'].required = False
+        self.fields['price'].required = False

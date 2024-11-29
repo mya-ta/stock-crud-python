@@ -1,3 +1,4 @@
+import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, ProductVariation, Color, Size
 from .forms import ProductForm, ProductVariationForm
@@ -6,60 +7,87 @@ from django.http import HttpResponse
 
 # View for Creating Product
 def create_product(request):
+    """
+    View to create a new product, display variations, and search for variations.
+    """
     if request.method == 'POST':
-        product_form = ProductForm(request.POST)
+        if 'save' in request.POST:  # Save button clicked
+            product_form = ProductForm(request.POST)
+            if product_form.is_valid():
+                # Save the product instance
+                product = product_form.save()
 
-        if product_form.is_valid():
-            # Save the product instance
-            product = product_form.save()
+                # Process product variations (colors and sizes)
+                color_choices = request.POST.getlist('color')
+                size_choices = request.POST.getlist('size')
 
-            # Get the selected color and size choices from the form
-            color_choices = request.POST.getlist('color')  # List of color IDs (not QuerySet)
-            size_choices = request.POST.getlist('size')  # List of size IDs (not QuerySet)
+                for color_id in color_choices:
+                    for size_id in size_choices:
+                        try:
+                            color = Color.objects.get(id=color_id)
+                            size = Size.objects.get(id=size_id)
+                        except (Color.DoesNotExist, Size.DoesNotExist):
+                            continue
 
-            print('Size Choices:', size_choices)
-            print('Quantity:', request.POST.get('quantity'))
-            print('Image:', request.FILES.get('image'))
-
-            # Loop through all combinations of selected colors and sizes
-            for color_id in color_choices:
-                for size_id in size_choices:
-                    try:
-                        # Fetch individual Color and Size instances using get()
-                        color = Color.objects.get(id=color_id)  # Single Color instance by ID
-                    except Color.DoesNotExist:
-                        color = None  # Handle the case where color does not exist
-
-                    try:
-                        size = Size.objects.get(id=size_id)  # Single Size instance by ID
-                    except Size.DoesNotExist:
-                        size = None  # Handle the case where size does not exist
-
-                    # Ensure that both color and size are valid before creating the variation
-                    if color and size:
-                        # Create a new ProductVariation instance
-                        variation = ProductVariation(
+                        # Create ProductVariation instances
+                        ProductVariation.objects.create(
                             product=product,
-                            color=color,  # Assign the selected color (single instance)
-                            size=size,    # Assign the selected size (single instance)
+                            color=color,
+                            size=size,
                             quantity=request.POST.get('quantity'),
                             price=request.POST.get('price'),
                             image=request.FILES.get('image'),
                         )
-                        variation.save()
 
-            return redirect('product_list')  # Redirect to the product list page after saving
+                return redirect('product_list')  # Redirect after saving
+
+        elif 'list' in request.POST:  # List button clicked
+            return redirect('product_list')  # Show all products with variations
+
+        elif 'generate' in request.POST:  # Search functionality clicked
+            return search_product_variations(request)  # Call search function
 
     else:
         product_form = ProductForm()
-        variation_form = ProductVariationForm()
 
-    # Pass Color and Size choices to the template
-    colors = Color.objects.all()
-    sizes = Size.objects.all()
+    # Render the form for creating a product
+    return render(request, 'myapp/create_product.html', {
+        'product_form': product_form,
+        'colors': Color.objects.all(),
+        'sizes': Size.objects.all(),
+    })
 
-    return render(request, 'myapp/create_product.html', {'product_form': product_form,
-                'variation_form': variation_form, 'colors': colors, 'sizes': sizes})
+
+def search_product_variations(request):
+    """
+    Function to handle the search based on product name, color, and size.
+    Filters the ProductVariations and returns the results.
+    """
+    search_name = request.POST.get('search_name', '')
+    search_color = request.POST.get('search_color', '')
+    search_size = request.POST.get('search_size', '')
+
+    # Filter the ProductVariation model based on the search criteria
+    variations = ProductVariation.objects.all()
+
+    if search_name:
+        variations = variations.filter(product__name__icontains=search_name)
+    if search_color:
+        variations = variations.filter(color__name__icontains=search_color)
+    if search_size:
+        variations = variations.filter(size__name__icontains=search_size)
+
+    # Render the results of the search
+    return render(request, 'myapp/create_product.html', {
+        'variations': variations,
+        'search_name': search_name,
+        'search_color': search_color,
+        'search_size': search_size,
+        'colors': Color.objects.all(),
+        'sizes': Size.objects.all(),
+        'product_form': ProductForm(),  # Re-initialize product form for the page
+    })
+
 
 # View for Listing Products and their Variations
 def product_list(request):
@@ -152,9 +180,28 @@ def delete_product(request, id):
     # Redirect to the product list page
     return redirect('product_list')
 
-
+# for Export
 def export_products_to_csv(request):
-    pass
+    # Create the HttpResponse object with the appropriate content type for CSV files
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="products.csv"'
+
+    # Create a CSV writer object
+    writer = csv.writer(response)
+
+    # Write the header row (column names)
+    writer.writerow(['ID', 'Name', 'SKU', 'Quantity', 'Price', 'Color','Size', 'Description'])
+
+    # Query the database for all products
+    product_variations = ProductVariation.objects.select_related(
+        'product', 'color', 'size')
+    
+    # Write product data rows
+    for product in product_variations:
+        writer.writerow([product.id, product.product_name, product.sku, product.quantity,
+                         product.price, product.color, product.size, product.description])
+
+    return response
 
 def generate_unique_names(product_name, sku, color, size):
     pass

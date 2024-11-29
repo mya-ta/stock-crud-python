@@ -1,6 +1,11 @@
-### 1st test
-OK : create, list table show
+#### History
 
-#### 2nd test
+3rd test >
+OK : search/ BUT : can't update, left export
+
+2nd test >
 OK : create/ read/ delete/ image upload/ 
-but, can't update/ left export
+But : can't update/ left export
+
+1st test >
+OK : create, list table show
