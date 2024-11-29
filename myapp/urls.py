@@ -7,4 +7,5 @@ urlpatterns = [
     # path('update/<int:id>/', views.update_product, name='update_product'),
     path('update/<int:id>/', views.update_product, name='update_product'),
     path('delete_product/<int:id>/', views.delete_product, name='delete_product'),
+    path('export/', views.export_csv, name='export_csv'),
 ]

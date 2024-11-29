@@ -58,4 +58,67 @@
 
     <!-- <button type="submit">Save Product</button> -->
 </form>
+<hr>
+
+<!-- Search Form -->
+<h3>Search Product Variations</h3>
+<form method="POST">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-md-4">
+      <input type="text" name="search_name" value="{{ search_name }}" placeholder="Search by Product Name" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <input type="text" name="search_color" value="{{ search_color }}" placeholder="Search by Color" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <input type="text" name="search_size" value="{{ search_size }}" placeholder="Search by Size" class="form-control">
+    </div>
+  </div>
+
+  <button class="btn btn-outline-primary" type="submit" name="generate"> Search</button>
+  <a href="{% url 'export_csv'%}" class="btn btn-outline-success">
+      Export
+  </a>
+</form>
+
+{% if variations %}
+    <h3>Search Results</h3>
+    <table class="table table-striped table-bordered">
+      <thead class="font-weight-bold table-primary">
+        <tr>
+                <th>No</th>
+                <th>Product Name</th>
+                <th>Image</th>
+                <th>SKU</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Color</th>
+                <th>Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for variation in variations %}
+            <td>{{ forloop.counter }}</td>
+            <td>{{ variation.product.name }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>  {% if variation.image %}
+                <img src="{{ variation.image.url}}" style="width: 50px; height: auto;" alt="Product Photo">
+                {% else %}
+                <span>No image</span>
+                {% endif %}</td>
+
+            <td>{{ variation.product.sku }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>{{ variation.quantity }}</td>
+            <td>{{ variation.price }}</td>
+            <td>{{ variation.color.name }}</td>
+            <td>{{ variation.size.name }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <h5>Product Not Found!!</h5>
+  {% endif %}
+
 {% endblock %}
