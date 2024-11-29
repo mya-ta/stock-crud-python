@@ -17,6 +17,7 @@ class Size(models.Model):
 # Model for Product
 class Product(models.Model):
     name = models.CharField(max_length=255)
+    sku = models.CharField(max_length=255, default='')
     description = models.TextField()
 
     def __str__(self):

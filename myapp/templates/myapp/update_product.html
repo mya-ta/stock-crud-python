@@ -1,0 +1,52 @@
+{% extends "myapp/base.html" %}
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ product_form.as_p }}
+
+    <h3>Product Variations</h3>
+    <div>
+        <label for="color">Select Color:</label>
+        <select name="color" multiple>
+            {% for color in colors %}
+                <option value="{{ color.id }}" {% if color.id in selected_colors %}selected{% endif %}>{{ color.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="size">Select Size:</label>
+        <select name="size" multiple>
+            {% for size in sizes %}
+                <option value="{{ size.id }}" {% if size.id in selected_sizes %}selected{% endif %}>{{ size.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" value="{{ variation.quantity }}">
+    </div>
+
+    <div>
+        <label for="price">Price:</label>
+        <input type="number" name="price" value="{{ variation.price }}">
+    </div>
+
+    <div>
+        <label for="image">Image:</label>
+        <input type="file" name="image">
+        {% if variation.image %}
+            <img src="{{ variation.image.url }}" class="img-thumbnail" alt="Product Photo">
+        {% endif %}
+    </div>
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<h3>Existing Variations</h3>
+{% for variation in product_variations %}
+    <p>{{ variation.color }} - {{ variation.size }} - Quantity: {{ variation.quantity }} - Price: {{ variation.price }}</p>
+{% endfor %}
+
+{% endblock %}

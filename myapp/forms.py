@@ -5,7 +5,12 @@ from .models import Product, ProductVariation, Color, Size
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description']
+        fields = ['name', 'sku', 'description']
+
+    # keyword arguments
+    def __init__(self, *args, **kwargs):
+        super(ProductForm, self).__init__(*args, **kwargs)
+        self.fields['description'].required = False
 
 # Form for Product Variation (multi-select for color and size)
 class ProductVariationForm(forms.ModelForm):
@@ -15,4 +20,4 @@ class ProductVariationForm(forms.ModelForm):
 
     class Meta:
         model = ProductVariation
-        fields = ['image', 'quantity', 'price', 'color', 'size']
+        fields = ['product', 'image', 'quantity', 'price', 'color', 'size']

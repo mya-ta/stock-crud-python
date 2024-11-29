@@ -6,31 +6,56 @@
 
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ product_form|crispy }}
-    
-    <h3>Select Colors</h3>
-    {% for color in colors %}
-        <label>
-            <input type="checkbox" name="color" value="{{ color.id }}"> {{ color.name }}
-        </label><br>
-    {% endfor %}
+    <button class="btn btn-outline-primary" type="submit">Save</button>
+    <button class="btn btn-outline-primary" type="button">Delete</button>
+    <button class="btn btn-outline-primary" type="reset">Cancel</button>
+    <a href="{% url 'product_list'%}" class="btn btn-outline-primary text-secondary px-0">
+      List
+  </a>
+  <br><br>
+  <!-- {{ product_form|crispy }} -->
 
-    <h3>Select Sizes</h3>
-    {% for size in sizes %}
-        <label>
-            <input type="checkbox" name="size" value="{{ size.id }}"> {{ size.name }}
-        </label><br>
-    {% endfor %}
+  <div class="row">
+    <div class="col-md-6 mb-0">
+      {{ product_form.name|as_crispy_field }}
+    </div>
+    <div class="col-md-6 mb-0">
+      {{ product_form.sku|as_crispy_field }}
+    </div>
+  </div>
 
-    <h3>Upload Image</h3>
+  <div class="row">
+
+    <div class="col-md-6 mb-0">
+        <label for="color">Select Color:</label>
+        <select id="color" name="color" class="form-select" multiple aria-label="multiple select example">
+            {% for color in colors %}
+            <option value="{{ color.id }}">{{ color.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-6 mb-0">
+        <label for="color">Select Size:</label>
+        <select id="size" name="size" class="form-select" multiple aria-label="multiple select example">
+            {% for size in sizes %}
+            <option value="{{ size.id }}">{{ size.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<h6>Upload Image</h6>
     <input type="file" name="image">
     
-    <h3>Quantity</h3>
+    <h6>Quantity</h6>
     <input type="number" name="quantity" min="1" required>
     
-    <h3>Price</h3>
+    <h6>Price</h6>
     <input type="number" name="price" step="0.01" required>
 
-    <button type="submit">Save Product</button>
+      {{ product_form.description|as_crispy_field }}
+
+    <!-- <button type="submit">Save Product</button> -->
 </form>
 {% endblock %}

@@ -1,0 +1,4 @@
+.prod-size {
+    width: 10px;   /* Makes the image take up the full width of its container */
+    height: auto;   /* Maintains aspect ratio */
+}
