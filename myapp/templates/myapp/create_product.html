@@ -28,7 +28,7 @@
 
     <div class="col-md-6 mb-0">
         <label for="color">Select Color:</label>
-        <select id="color" name="color" class="form-select" multiple aria-label="multiple select example">
+        <select name="color" id="color" multiple>
             {% for color in colors %}
             <option value="{{ color.id }}">{{ color.name }}</option>
             {% endfor %}
@@ -37,26 +37,33 @@
 
     <div class="col-md-6 mb-0">
         <label for="color">Select Size:</label>
-        <select id="size" name="size" class="form-select" multiple aria-label="multiple select example">
+        <select name="size" id="size" multiple>
             {% for size in sizes %}
             <option value="{{ size.id }}">{{ size.name }}</option>
             {% endfor %}
         </select>
     </div>
 </div>
+<br>
 
-<h6>Upload Image</h6>
-    <input type="file" name="image">
+<div class="row">
+  <div class="col-md-6 mb-0">
+
+    <label for="image"> Product Image: </label>
+    <input class="form-control" type="file" id="formFile" name="image"> <br>
     
-    <h6>Quantity</h6>
-    <input type="number" name="quantity" min="1" required>
+    <label for="quantity"> Quantity: </label>
+    <input name="quantity" class="form-control" type="number" placeholder="Quantity" aria-label="default input example"> <br>
     
-    <h6>Price</h6>
-    <input type="number" name="price" step="0.01" required>
+    <label for="price"> Price: </label>
+    <input name="price" class="form-control" type="number" placeholder="Price" aria-label="default input example">
+  </div>
 
-      {{ product_form.description|as_crispy_field }}
-
-    <!-- <button type="submit">Save Product</button> -->
+      <div class="col-md-6 mb-0">
+        {{ product_form.description|as_crispy_field }}
+      </div>
+</div>
+      
 </form>
 <hr>
 
@@ -75,12 +82,14 @@
       <input type="text" name="search_size" value="{{ search_size }}" placeholder="Search by Size" class="form-control">
     </div>
   </div>
+  <br>
 
   <button class="btn btn-outline-primary" type="submit" name="generate"> Search</button>
   <a href="{% url 'export_csv'%}" class="btn btn-outline-success">
       Export
   </a>
 </form>
+<br>
 
 {% if variations %}
     <h3>Search Results</h3>
@@ -117,8 +126,8 @@
       </tbody>
     </table>
 
-    {% else %}
-    <h5>Product Not Found!!</h5>
-  {% endif %}
+{% else %}
+<h5>Product Not Found!!</h5>
 
+{% endif %}
 {% endblock %}

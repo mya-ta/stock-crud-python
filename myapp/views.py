@@ -1,12 +1,9 @@
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, ProductVariation, Color, Size
-from .forms import ProductForm, ProductVariationForm
+from .forms import ProductForm, ProductVariationForm, ProductVari_UpdateForm
 from django.db.models import Prefetch
 from django.http import HttpResponse
-import logging
-
-logger = logging.getLogger(__name__)
 
 # To implement the functionality of exporting the filtered product variations from the search results 
 # into a CSV file, use Python's built-in csv module to generate a CSV file based on the 
@@ -83,47 +80,69 @@ def update_product(request, id):
     # Get the related Product instance from the ProductVariation
     product = variation.product
 
-    print(f"Product instance from the ProductVariation ---> {product} and id={product.id} sku={variation.product.sku}")
-    logger.debug(f"Product instance from the ProductVariation ---> {product} and id={product.id} sku={product.sku}")
+    print(f"Ans ---> Product: {product} and id={product.id} sku={variation.product.sku}")
 
     # If the request method is POST, process the form data
     if request.method == 'POST':
         # Create the forms for both Product and ProductVariation
         product_form = ProductForm(request.POST, instance=product)
-        variation_form = ProductVariationForm(request.POST, request.FILES, instance=variation)
+        productVari_form = ProductVari_UpdateForm(request.POST, request.FILES)
 
-        if product_form.is_valid() and variation_form.is_valid():
+        # color = get_object_or_404(Color, id=color_id)
+        # size = get_object_or_404(Size, id=size_id)        
+
+        if product_form.is_valid() and productVari_form.is_valid():
             # To update for product's name and SKU
             # product_name = request.POST.get('product_name', product.name)
             # product_sku = request.POST.get('product_sku', product.sku)
 
-            # Update the product fields with the new values
-            # product.name = product_name
-            # product.sku = product_sku
-
             # Save the updated Product data
             product = product_form.save()
 
-            # Save the updated ProductVariation
-            variation.quantity = variation_form.cleaned_data['quantity']
-            variation.price = variation_form.cleaned_data['quantity']
-            variation.image = variation_form.cleaned_data['image']
-            variation_form.save()
+            # curr_quantity = productVari_form.cleaned_data.get('quantity', None)
+            # if curr_quantity == "" or 'null' or None:
+            #     original_q = variation.quantity
+            #     variation.quantity = original_q
+            # else:
+            #     variation.quantity = productVari_form.cleaned_data.get('quantity', variation.quantity)
 
-            # Save the updated ProductVariation data
+            # variation.save(commit=False)
+            variation.image = productVari_form.cleaned_data.get('image', variation.image)
+            variation.quantity = productVari_form.cleaned_data.get('quantity', variation.quantity)
+            variation.price = productVari_form.cleaned_data.get('price', variation.price)
+            variation.save()
+
+            # variation.save(commit=False)
+            # # Update only the specific fields in ProductVariation (image, price, and quantity)
+            # variation.image = variation_form.cleaned_data.get('image', variation.image)
+            # variation.price = variation_form.cleaned_data.get('price', variation.price)
+            # variation.quantity = variation_form.cleaned_data.get('quantity', variation.quantity)
+            
+            # variation.save() # Save the updated fields in ProductVariation (only these fields)
+
+            # Save the updated Product data
+            # product = product_form.save()
             # variation = variation_form.save()
 
+            # Save the updated ProductVariation
+            # variation.quantity = variation_form.cleaned_data['quantity']
+            # variation.price = variation_form.cleaned_data['price']
+            # variation.image = variation_form.cleaned_data['image']
+            
             return redirect('product_list')  # Redirect to the product list page after update
-
+        else:
+            # Log errors for debugging
+            print("Error --->", product_form.errors)
+            print(productVari_form.errors)
     else:
         # Initialize the forms with the existing data for GET requests
         product_form = ProductForm(instance=product)
-        variation_form = ProductVariationForm(instance=variation)
+        productVari_form = ProductVariationForm(instance=variation)
 
     # Pass both forms and the related objects to the template
     return render(request, 'myapp/update_product.html', {
         'product_form': product_form,
-        'variation_form': variation_form,
+        'productVari_form': productVari_form,
         'variation': variation,
         'product': product,
     })

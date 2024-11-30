@@ -20,16 +20,17 @@
           {{ product_form.sku|as_crispy_field }} </div>
         <div class="col-md-6 mb-0">
             {{ product_form.description|as_crispy_field }} </div>
+
         <div class="col-md-6 mb-0">
-        {{variation_form.image|as_crispy_field}}
-        {{variation_form.quantity|as_crispy_field}}
-        {{variation_form.price|as_crispy_field}} </div>
+
+            <input class="form-control" type="file" id="formFile" name="image" accept="media/product_images/*"> <br>
+            <input name="price" class="form-control" type="number" placeholder="Price" aria-label="default input example">
+            <input name="quantity" class="form-control" type="number" placeholder="Quantity" aria-label="default input example">
+
+        </div>
 
     </div>
 </fieldset>
-    
-
-    
 
     </form>
 
