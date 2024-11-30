@@ -1,5 +1,6 @@
 #### History
 
+4 mini > OK: updated export/ BUT, can't update
 4th test > OK: search/ export all values in productVariation Table
 
 3rd test > OK: search  

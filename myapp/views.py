@@ -74,75 +74,40 @@ def product_list(request):
     return render(request, 'myapp/product_list.html', {'product_variations': product_variations})
 
 def update_product(request, id):
-    # Fetch the existing product using the provided id
-    product = get_object_or_404(ProductVariation, id=id)
-
-    # Fetch the variations for this product (if any)
-    product_variations = product.variations.all()
-
+    # Fetch the ProductVariation instance by ID (which is passed as 'id')
+    variation = get_object_or_404(ProductVariation, id=id)
+    
+    # Get the related Product instance from the ProductVariation
+    product = variation.product  # Access the Product instance related to this ProductVariation
+    
+    # If the request method is POST, process the form data
     if request.method == 'POST':
-        # Initialize the ProductForm with the existing product data
-        product_form = ProductForm(request.POST, instance=product)
+        form = ProductForm(request.POST, instance=variation)
 
-        # Initialize ProductVariationForm with the existing variations (if any)
-        variation_form = ProductVariationForm(request.POST)
+        if form.is_valid():
 
-        if product_form.is_valid():
-            # Save the product instance
-            product_form.save()
+            # Optionally, if you want to allow updates for product's name and SKU
+            product_name = request.POST.get('product_name', product.name)
+            product_sku = request.POST.get('product_sku', product.sku)
 
-            # Get the selected color and size choices from the form
-            color_choices = request.POST.getlist('color')  # List of color IDs (not QuerySet)
-            size_choices = request.POST.getlist('size')  # List of size IDs (not QuerySet)
+            # Update the product fields with the new values
+            product.name = product_name
+            product.sku = product_sku
 
-            # Loop through all combinations of selected colors and sizes
-            for color_id in color_choices:
-                for size_id in size_choices:
-                    try:
-                        # Fetch individual Color and Size instances using get()
-                        color = Color.objects.get(id=color_id)  # Single Color instance by ID
-                    except Color.DoesNotExist:
-                        color = None  # Handle the case where color does not exist
+            # Save the related Product object with updated fields
+            product.save()
 
-                    try:
-                        size = Size.objects.get(id=size_id)  # Single Size instance by ID
-                    except Size.DoesNotExist:
-                        size = None  # Handle the case where size does not exist
-
-                    # Ensure that both color and size are valid before creating/updating the variation
-                    if color and size:
-                        # Check if a variation with this product, color, and size already exists
-                        variation, created = ProductVariation.objects.get_or_create(
-                            product=product,
-                            color=color,
-                            size=size,
-                        )
-
-                        # Update the variation fields if the variation exists
-                        variation.quantity = request.POST.get('quantity')
-                        variation.price = request.POST.get('price')
-                        variation.image = request.FILES.get('image', variation.image)  # Keep the current image if no new one is uploaded
-                        variation.save()
-
-            # After successfully saving, redirect to product list
-            return redirect('product_list')
+            return redirect('product_list')  # Redirect to the product list page after update
 
     else:
-        # If the request is GET, initialize the forms with the existing data
-        product_form = ProductForm(instance=product)
-        variation_form = ProductVariationForm()
+        # Initialize the form with the existing data of the ProductVariation
+        form = ProductVariationForm(instance=variation)
 
-    # Pass Color and Size choices to the template
-    colors = Color.objects.all()
-    sizes = Size.objects.all()
-
+    # Pass the form and related objects to the template
     return render(request, 'myapp/update_product.html', {
-        'product_form': product_form,
-        'variation_form': variation_form,
-        'colors': colors,
-        'sizes': sizes,
+        'form': form,
+        'variation': variation,
         'product': product,
-        'product_variations': product_variations,
     })
 
 def delete_product(request, id):
@@ -210,11 +175,13 @@ def export_csv(request):
     writer = csv.writer(response)
     
     # Write the header row
-    writer.writerow(['Product Name', 'Color', 'Size', 'Quantity', 'Price'])
+    writer.writerow(['Product Name', 'Image', 'SKU', 'Quantity', 'Price', 'Color', 'Size', 'Description'])
     
     # Write the data rows
     for variation in variations:
-        writer.writerow([variation.product.name, variation.color.name, variation.size.name, variation.quantity, variation.price])
+        writer.writerow([variation.product.name, variation.image, variation.product.sku, 
+        variation.quantity, variation.price, variation.color.name,
+        variation.size.name, variation.product.description ])
 
     return response
 

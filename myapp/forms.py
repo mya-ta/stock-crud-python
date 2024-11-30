@@ -21,3 +21,7 @@ class ProductVariationForm(forms.ModelForm):
     class Meta:
         model = ProductVariation
         fields = ['product', 'image', 'quantity', 'price', 'color', 'size']
+
+    # Add additional fields if needed for updating Product attributes like name and SKU
+    product_name = forms.CharField(max_length=255, required=False, label='Product Name')
+    product_sku = forms.CharField(max_length=255, required=False, label='Product SKU')
