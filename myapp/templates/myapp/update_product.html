@@ -2,10 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <h2>Update Product Variation</h2>
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
+
+        <h2>Update Product</h2>
+    <fieldset>
+        <legend>Product Details</legend>
+        {{ product_form.as_p }}  <!-- Render product form -->
+    </fieldset>
 
         <div class="row">
             <div class="col-md-6">

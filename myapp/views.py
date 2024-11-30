@@ -4,6 +4,9 @@ from .models import Product, ProductVariation, Color, Size
 from .forms import ProductForm, ProductVariationForm
 from django.db.models import Prefetch
 from django.http import HttpResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 # To implement the functionality of exporting the filtered product variations from the search results 
 # into a CSV file, use Python's built-in csv module to generate a CSV file based on the 
@@ -76,36 +79,46 @@ def product_list(request):
 def update_product(request, id):
     # Fetch the ProductVariation instance by ID (which is passed as 'id')
     variation = get_object_or_404(ProductVariation, id=id)
-    
+   
     # Get the related Product instance from the ProductVariation
-    product = variation.product  # Access the Product instance related to this ProductVariation
-    
+    product = variation.product
+
+    print(f"Product instance from the ProductVariation ---> {product} and id={product.id} sku={variation.product.sku}")
+    logger.debug(f"Product instance from the ProductVariation ---> {product} and id={product.id} sku={product.sku}")
+
     # If the request method is POST, process the form data
     if request.method == 'POST':
-        form = ProductForm(request.POST, instance=variation)
+        # Create the forms for both Product and ProductVariation
+        product_form = ProductForm(request.POST, instance=product)
+        # variation_form = ProductVariationForm(request.POST, instance=variation)
 
-        if form.is_valid():
+        if product_form.is_valid():
 
-            # Optionally, if you want to allow updates for product's name and SKU
-            product_name = request.POST.get('product_name', product.name)
-            product_sku = request.POST.get('product_sku', product.sku)
+            # To update for product's name and SKU
+            # product_name = request.POST.get('product_name', product.name)
+            # product_sku = request.POST.get('product_sku', product.sku)
 
             # Update the product fields with the new values
-            product.name = product_name
-            product.sku = product_sku
+            # product.name = product_name
+            # product.sku = product_sku
 
-            # Save the related Product object with updated fields
-            product.save()
+            # Save the updated Product data
+            product = product_form.save()
+
+            # Save the updated ProductVariation data
+            # variation = variation_form.save()
 
             return redirect('product_list')  # Redirect to the product list page after update
 
     else:
-        # Initialize the form with the existing data of the ProductVariation
-        form = ProductVariationForm(instance=variation)
+        # Initialize the forms with the existing data for GET requests
+        product_form = ProductForm(instance=product)
+        # variation_form = ProductVariationForm(instance=variation)
 
-    # Pass the form and related objects to the template
+    # Pass both forms and the related objects to the template
     return render(request, 'myapp/update_product.html', {
-        'form': form,
+        'product_form': product_form,
+        # 'variation_form': variation_form,
         'variation': variation,
         'product': product,
     })
@@ -184,7 +197,6 @@ def export_csv(request):
         variation.size.name, variation.product.description ])
 
     return response
-
 
 def generate_unique_names(product_name, sku, color, size):
     pass
