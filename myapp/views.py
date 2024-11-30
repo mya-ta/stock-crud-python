@@ -90,10 +90,9 @@ def update_product(request, id):
     if request.method == 'POST':
         # Create the forms for both Product and ProductVariation
         product_form = ProductForm(request.POST, instance=product)
-        # variation_form = ProductVariationForm(request.POST, instance=variation)
+        variation_form = ProductVariationForm(request.POST, request.FILES, instance=variation)
 
-        if product_form.is_valid():
-
+        if product_form.is_valid() and variation_form.is_valid():
             # To update for product's name and SKU
             # product_name = request.POST.get('product_name', product.name)
             # product_sku = request.POST.get('product_sku', product.sku)
@@ -105,6 +104,12 @@ def update_product(request, id):
             # Save the updated Product data
             product = product_form.save()
 
+            # Save the updated ProductVariation
+            variation.quantity = variation_form.cleaned_data['quantity']
+            variation.price = variation_form.cleaned_data['quantity']
+            variation.image = variation_form.cleaned_data['image']
+            variation_form.save()
+
             # Save the updated ProductVariation data
             # variation = variation_form.save()
 
@@ -113,12 +118,12 @@ def update_product(request, id):
     else:
         # Initialize the forms with the existing data for GET requests
         product_form = ProductForm(instance=product)
-        # variation_form = ProductVariationForm(instance=variation)
+        variation_form = ProductVariationForm(instance=variation)
 
     # Pass both forms and the related objects to the template
     return render(request, 'myapp/update_product.html', {
         'product_form': product_form,
-        # 'variation_form': variation_form,
+        'variation_form': variation_form,
         'variation': variation,
         'product': product,
     })

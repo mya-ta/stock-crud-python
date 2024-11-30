@@ -7,29 +7,30 @@
         {% csrf_token %}
 
         <h2>Update Product</h2>
-    <fieldset>
-        <legend>Product Details</legend>
-        {{ product_form.as_p }}  <!-- Render product form -->
-    </fieldset>
-
-        <div class="row">
-            <div class="col-md-6">
-                <!-- Product Name -->
-                <label for="product_name">Product Name</label>
-                <input type="text" name="product_name" class="form-control" value="{{ product.name }}">
-            </div>
-            <div class="col-md-6">
-                <!-- Product SKU -->
-                <label for="product_sku">Product SKU</label>
-                <input type="text" name="product_sku" class="form-control" value="{{ product.sku }}">
-            </div>
-        </div>
-
-        <h6>Upload Image (Optional)</h6>
-        <input type="file" name="image">
-
         <button class="btn btn-outline-primary" type="submit">Save Changes</button>
         <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+
+    <fieldset>
+        <legend>Product Details</legend>    
+
+    <div class="row">
+        <div class="col-md-6 mb-0">
+          {{ product_form.name|as_crispy_field }} </div>
+        <div class="col-md-6 mb-0">
+          {{ product_form.sku|as_crispy_field }} </div>
+        <div class="col-md-6 mb-0">
+            {{ product_form.description|as_crispy_field }} </div>
+        <div class="col-md-6 mb-0">
+        {{variation_form.image|as_crispy_field}}
+        {{variation_form.quantity|as_crispy_field}}
+        {{variation_form.price|as_crispy_field}} </div>
+
+    </div>
+</fieldset>
+    
+
+    
+
     </form>
 
 {% endblock %}

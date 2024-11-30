@@ -25,3 +25,7 @@ class ProductVariationForm(forms.ModelForm):
     # Add additional fields if needed for updating Product attributes like name and SKU
     product_name = forms.CharField(max_length=255, required=False, label='Product Name')
     product_sku = forms.CharField(max_length=255, required=False, label='Product SKU')
+    image = forms.ImageField(max_length=255, required=False, label='Product Image')
+    quantity = forms.IntegerField(required=False, label='Quantity')
+    price = forms.IntegerField(required=False, label='Price')
+

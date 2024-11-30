@@ -6,10 +6,10 @@
 
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <button class="btn btn-outline-primary" type="submit">Save</button>
+    <button class="btn btn-outline-primary" type="submit" name="save">Save</button>
     <button class="btn btn-outline-primary" type="button">Delete</button>
     <button class="btn btn-outline-primary" type="reset">Cancel</button>
-    <a href="{% url 'product_list'%}" class="btn btn-outline-primary text-secondary px-0">
+    <a href="{% url 'product_list'%}" class="btn btn-outline-secondary">
       List
   </a>
   <br><br>
