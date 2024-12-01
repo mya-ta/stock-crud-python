@@ -22,10 +22,13 @@
             {{ product_form.description|as_crispy_field }} </div>
 
         <div class="col-md-6 mb-0">
+            {{ productVari_form.image|as_crispy_field }}
+            {{ productVari_form.quantity|as_crispy_field }}
+            {{ productVari_form.price|as_crispy_field }}
 
-            <input class="form-control" type="file" id="formFile" name="image" accept="media/product_images/*"> <br>
+            <!-- <input class="form-control" type="file" id="formFile" name="image" accept="media/product_images/*"> <br>
             <input name="price" class="form-control" type="number" placeholder="Price" aria-label="default input example">
-            <input name="quantity" class="form-control" type="number" placeholder="Quantity" aria-label="default input example">
+            <input name="quantity" class="form-control" type="number" placeholder="Quantity" aria-label="default input example"> -->
 
         </div>
 

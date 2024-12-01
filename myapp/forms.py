@@ -33,9 +33,10 @@ class ProductVariationForm(forms.ModelForm):
     price = forms.IntegerField(required=False, label='Price: ')
 
 class ProductVari_UpdateForm(forms.Form):
-    # color = forms.ChoiceField(queryset=Color.objects.all(), widget=forms.Select, required=False)
-    # size = forms.ChoiceField(queryset=Size.objects.all(), widget=forms.Select, required=False)
+    # class Meta:
+    #     model = ProductVariation
+    #     fields = ['product', 'image', 'quantity', 'price']
 
-    image = forms.ImageField(required=False, label='Product Image: ')
-    quantity = forms.IntegerField(required=False, label='Quantity: ')
-    price = forms.IntegerField(required=False, label='Price: ')
+    image = forms.ImageField(required=False, label='Product Image:')
+    quantity = forms.IntegerField(required=False, label='Quantity:')
+    price = forms.IntegerField(required=False, label='Price:')

@@ -1,4 +1,4 @@
-new MultiSelectTag('countries', {
+new MultiSelectTag('color', {
     rounded: true,    // default true
     shadow: true,      // default false
     placeholder: 'Search',  // default Search...

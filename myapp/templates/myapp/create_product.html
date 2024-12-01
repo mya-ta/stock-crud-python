@@ -6,10 +6,10 @@
 
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <button class="btn btn-outline-primary" type="submit" name="save">Save</button>
-    <button class="btn btn-outline-primary" type="button">Delete</button>
-    <button class="btn btn-outline-primary" type="reset">Cancel</button>
-    <a href="{% url 'product_list'%}" class="btn btn-outline-secondary">
+    <button class="btn btn-primary" type="submit" name="save">Save</button>
+    <button class="btn btn-primary" type="button">Delete</button>
+    <button class="btn btn-primary" type="reset">Cancel</button>
+    <a href="{% url 'product_list'%}" class="btn btn-primary">
       List
   </a>
   <br><br>
@@ -69,25 +69,37 @@
 
 <!-- Search Form -->
 <h3>Search Product Variations</h3>
-<form method="POST">
+<form method="POST" name="searchAndExport">
   {% csrf_token %}
   <div class="row">
     <div class="col-md-4">
       <input type="text" name="search_name" value="{{ search_name }}" placeholder="Search by Product Name" class="form-control">
     </div>
     <div class="col-md-4">
-      <input type="text" name="search_color" value="{{ search_color }}" placeholder="Search by Color" class="form-control">
+
+      <select name="search_color" id="color" multiple>
+        {% for color in colors %}
+        <option value="{{ color.id }}">{{ color.name }}</option>
+        {% endfor %}
+    </select>
+    <select name="search_size" id="size" multiple>
+      {% for size in sizes %}
+      <option value="{{ size.id }}">{{ size.name }}</option>
+      {% endfor %}
+  </select>
+
+      <!-- <input type="text" name="search_color" value="{{ search_color }}" placeholder="Search by Color" class="form-control"> -->
     </div>
-    <div class="col-md-4">
+    <!-- <div class="col-md-4">
       <input type="text" name="search_size" value="{{ search_size }}" placeholder="Search by Size" class="form-control">
-    </div>
+    </div> -->
+
   </div>
   <br>
 
   <button class="btn btn-outline-primary" type="submit" name="generate"> Search</button>
-  <a href="{% url 'export_csv'%}" class="btn btn-outline-success">
-      Export
-  </a>
+  <input type="submit"  name="export_csv" class="btn btn-outline-success" value="Export11">
+
 </form>
 <br>
 
@@ -104,6 +116,7 @@
                 <th>Price</th>
                 <th>Color</th>
                 <th>Size</th>
+                <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -121,6 +134,18 @@
             <td>{{ variation.price }}</td>
             <td>{{ variation.color.name }}</td>
             <td>{{ variation.size.name }}</td>
+            <td>
+              <a href="{% url 'update_product' variation.id %}" class="btn text-secondary px-0">
+                <i class="far fa-edit fa-lg"></i>
+            </a>
+            <form action="{% url 'delete_product' variation.id %}" method="post" class="d-inline" 
+            onclick="return confirm('Are you sure you want to delete this stock?');">
+                {% csrf_token %}
+                <button type="submit" class="btn">
+                    <i class="far fa-trash-alt fa-lg text-danger float-right"></i>
+                </button>
+            </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
