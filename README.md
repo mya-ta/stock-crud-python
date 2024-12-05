@@ -1,6 +1,9 @@
 #### History
 
-6th test > OK: CRUD/ can update with no blank in price, quantity, image  
+7th test > OK: CRUD/ can update with blank in price, quantity, image  
+BUT: not yet show generated data in table like said in review meeting
+
+6th test > OK: CRUD/ can update with no blank in price, quantity, image
 
 5th test > OK: CRUD,update price, quantity, image  
 BUT: can't update with no blank in price and quantity for update

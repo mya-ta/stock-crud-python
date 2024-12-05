@@ -1,0 +1,14 @@
+.prod-size {
+    width: 10px;   /* Makes the image take up the full width of its container */
+    height: auto;   /* Maintains aspect ratio */
+}
+
+#multipleSelect {
+    max-width: 100%;
+    width: 250px;
+}
+
+.vscomp-toggle-button {
+    padding: 10px 30px 10px 10px;
+    border-radius: 5px;
+}

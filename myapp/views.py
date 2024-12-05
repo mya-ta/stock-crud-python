@@ -1,19 +1,13 @@
 import csv
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, ProductVariation, Color, Size
 from .forms import ProductForm, ProductVariationForm, ProductVari_UpdateForm
 from django.db.models import Prefetch
 from django.http import HttpResponse
 
-# To implement the functionality of exporting the filtered product variations from the search results 
-# into a CSV file, use Python's built-in csv module to generate a CSV file based on the 
-# ProductVariation table values displayed in the search results.
-
 # View for Creating Product
 def create_product(request):
-    """
-    View to create a new product, display variations, and search for variations.
-    """
     if request.method == 'POST':
         if 'save' in request.POST:  # Save button clicked
             product_form = ProductForm(request.POST)
@@ -41,6 +35,8 @@ def create_product(request):
                             color=color,
                             size=size,
                             quantity=request.POST.get('quantity'),
+                            
+
                             price=request.POST.get('price'),
                             image=request.FILES.get('image'),
                         )
@@ -50,7 +46,7 @@ def create_product(request):
         elif 'list' in request.POST:  # List button clicked
             return redirect('product_list')  # Show all products with variations
 
-        elif 'generate' in request.POST:  # Search functionality clicked
+        elif 'search' in request.POST:  # Search functionality clicked
             return search_product_variations(request)  # Call search function
 
         elif 'export_csv' in request.POST:  # Export CSV clicked
@@ -93,9 +89,6 @@ def update_product(request, id):
 
         print("Colors --> ", variation.color.id, "color instance -->", Color.objects.get(id=variation.color.id))
 
-        # color = get_object_or_404(Color, id=color_id)
-        # size = get_object_or_404(Size, id=size_id)        
-
         if product_form.is_valid() and productVari_form.is_valid():
             # To update for product's name and SKU
             # product_name = request.POST.get('product_name', product.name)
@@ -103,24 +96,13 @@ def update_product(request, id):
 
             # Save the updated Product data
             product = product_form.save()
-
-            # ProductVariation.objects.filter(id=id).update(price=variation.price, quantity=variation.quantity, image=variation.image)
                 
-            # variation.save(commit=False)
-            # variation.color_id = variation.color.id
-            # variation.image = productVari_form.cleaned_data.get('image', variation.image)
-            # variation.quantity = productVari_form.cleaned_data.get('quantity', variation.quantity)
-            # variation.price = productVari_form.cleaned_data.get('price', variation.price)
-            # productVari_form.save(update_fields=['product', 'image', 'quantity', 'price'])
-            # variation = productVari_form.save()
-
             # variation.save(commit=False)
             # # Update only the specific fields in ProductVariation (image, price, and quantity)
             print("Image --> ", productVari_form.cleaned_data.get('image', variation.image))
             new_image = request.FILES.get('image', None)
             if new_image:
                 variation.image = new_image
-            # variation.image = productVari_form.cleaned_data.get('image', variation.image)
             variation.price = productVari_form.cleaned_data.get('price', variation.price)
             variation.quantity = productVari_form.cleaned_data.get('quantity', variation.quantity)
 
@@ -128,21 +110,10 @@ def update_product(request, id):
             
             variation.save() # Save the updated fields in ProductVariation (only these fields)
 
-            # Save the updated Product data
-            # product = product_form.save()
-            # variation = variation_form.save()
-
-            # Save the updated ProductVariation
-            # variation.quantity = productVari_form.cleaned_data['quantity']
-            # variation.price = productVari_form.cleaned_data['price']
-            # variation.image = productVari_form.cleaned_data['image']
-            # variation = productVari_form.save()
-            # productVari_form.save(update_fields=['quantity', 'price', 'image'])
-            
             return redirect('product_list')  # Redirect to the product list page after update
         else:
             # Log errors for debugging
-            print("Error --->", product_form.errors)
+            print(product_form.errors)
             print(productVari_form.errors)
     else:
         # Initialize the forms with the existing data for GET requests
@@ -168,10 +139,6 @@ def delete_product(request, id):
     return redirect('product_list')
 
 def search_product_variations(request):
-    """
-    Function to handle the search based on product name, color, and size.
-    Filters the ProductVariations and returns the results.
-    """
     search_name = request.POST.get('search_name', '')
     search_color = request.POST.getlist('search_color', '')
     search_size = request.POST.getlist('search_size', '')
@@ -257,6 +224,3 @@ def export_csv(request):
     #     variation.size.name, variation.product.description ])
 
     return response
-
-def generate_unique_names(product_name, sku, color, size):
-    pass

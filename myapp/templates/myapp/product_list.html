@@ -4,14 +4,14 @@
 {% block content %}
 <h2>Product List</h2>
 
-<table class="table table-striped table-bordered">
+<table id="p_list" class="table table-striped table-bordered">
     <thead class="font-weight-bold table-primary">
         <tr>
                 <th>No</th>
                 <th>ID</th>
-                <th>Product Name</th>
+                <th onclick="sortTable(0)">Product Name</th>
                 <th>Image</th>
-                <th>SKU</th>
+                <th onclick="sortTable(1)">SKU</th>
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Color</th>
@@ -24,14 +24,14 @@
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{variation.id}}</td>
-            <td>{{ variation.product.name }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>{{ variation.product.name }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
             <td>  {% if variation.image %}
                 <img src="{{ variation.image.url}}" style="width: 50px; height: auto;" alt="Product Photo">
                 {% else %}
                 <span>No image</span>
                 {% endif %}</td>
 
-            <td>{{ variation.product.sku }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>{{ variation.product.sku }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
             <td>{{ variation.quantity }}</td>
             <td>{{ variation.price }}</td>
             <td>{{ variation.color.name }}</td>

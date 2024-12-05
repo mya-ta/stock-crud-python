@@ -6,10 +6,11 @@
 
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
+
     <button class="btn btn-primary" type="submit" name="save">Save</button>
     <button class="btn btn-primary" type="button">Delete</button>
     <button class="btn btn-primary" type="reset">Cancel</button>
-    <a href="{% url 'product_list'%}" class="btn btn-primary">
+    <a href="{% url 'product_list'%}" name="list" class="btn btn-primary">
       List
   </a>
   <br><br>
@@ -28,7 +29,7 @@
 
     <div class="col-md-6 mb-0">
         <label for="color">Select Color:</label>
-        <select name="color" id="color" multiple>
+        <select name="color" id="color" class="form-select" multiple>
             {% for color in colors %}
             <option value="{{ color.id }}">{{ color.name }}</option>
             {% endfor %}
@@ -37,7 +38,7 @@
 
     <div class="col-md-6 mb-0">
         <label for="color">Select Size:</label>
-        <select name="size" id="size" multiple>
+        <select name="size" id="size" class="form-select" multiple>
             {% for size in sizes %}
             <option value="{{ size.id }}">{{ size.name }}</option>
             {% endfor %}
@@ -63,9 +64,9 @@
         {{ product_form.description|as_crispy_field }}
       </div>
 </div>
-      
+
 </form>
-<hr>
+<hr><br>
 
 <!-- Search Form -->
 <h3>Search Product Variations</h3>
@@ -76,13 +77,14 @@
       <input type="text" name="search_name" value="{{ search_name }}" placeholder="Search by Product Name" class="form-control">
     </div>
     <div class="col-md-4">
-
-      <select name="search_color" id="color" multiple>
+      <select name="search_color" id="color" class="form-select" multiple>
         {% for color in colors %}
         <option value="{{ color.id }}">{{ color.name }}</option>
         {% endfor %}
-    </select>
-    <select name="search_size" id="size" multiple>
+    </select> </div>
+
+    <div class="col-md-4">
+    <select name="search_size" id="size" class="form-select" multiple>
       {% for size in sizes %}
       <option value="{{ size.id }}">{{ size.name }}</option>
       {% endfor %}
@@ -97,8 +99,8 @@
   </div>
   <br>
 
-  <button class="btn btn-outline-primary" type="submit" name="generate"> Search</button>
-  <input type="submit"  name="export_csv" class="btn btn-outline-success" value="Export11">
+  <button class="btn btn-outline-primary" type="submit" name="search"> Search</button>
+  <input type="submit"  name="export_csv" class="btn btn-outline-success" value="Export">
 
 </form>
 <br>
@@ -122,14 +124,14 @@
       <tbody>
         {% for variation in variations %}
             <td>{{ forloop.counter }}</td>
-            <td>{{ variation.product.name }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>{{ variation.product.name }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
             <td>  {% if variation.image %}
                 <img src="{{ variation.image.url}}" style="width: 50px; height: auto;" alt="Product Photo">
                 {% else %}
                 <span>No image</span>
                 {% endif %}</td>
 
-            <td>{{ variation.product.sku }}-{{ variation.color.name }}-{{ variation.size.name }}</td>
+            <td>{{ variation.product.sku }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
             <td>{{ variation.quantity }}</td>
             <td>{{ variation.price }}</td>
             <td>{{ variation.color.name }}</td>

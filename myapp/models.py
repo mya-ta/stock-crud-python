@@ -3,6 +3,7 @@ from django.db import models
 # Model for Color
 class Color(models.Model):
     name = models.CharField(max_length=100)
+    code = models.CharField(max_length=10, default="")
 
     def __str__(self):
         return self.name
@@ -10,6 +11,7 @@ class Color(models.Model):
 # Model for Size
 class Size(models.Model):
     name = models.CharField(max_length=50)
+    code = models.CharField(max_length=5, default="")
 
     def __str__(self):
         return self.name
