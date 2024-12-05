@@ -1,5 +1,7 @@
 #### History
 
+mini-1 > OK: can show table for Generated Product Variations/ just show table, not yet save to db
+
 7th test > OK: CRUD/ can update with blank in price, quantity, image  
 BUT: not yet show generated data in table like said in review meeting
 

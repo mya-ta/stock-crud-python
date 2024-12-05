@@ -6,61 +6,139 @@ from .forms import ProductForm, ProductVariationForm, ProductVari_UpdateForm
 from django.db.models import Prefetch
 from django.http import HttpResponse
 
-# View for Creating Product
+
 def create_product(request):
+    product_form = ProductForm()
     if request.method == 'POST':
-        if 'save' in request.POST:  # Save button clicked
+        if 'generate' in request.POST:  # Generate button clicked
             product_form = ProductForm(request.POST)
             if product_form.is_valid():
-                # Save the product instance
-                product = product_form.save()
-
-                # Process product variations (colors and sizes)
-                color_choices = request.POST.getlist('color')
-                size_choices = request.POST.getlist('size')
-                print(f"color={color_choices}/ size={size_choices}")
+                product = product_form.save(commit=False)
+                # Capture the product name and SKU from the form
+                product_name = product_form.cleaned_data['name']
+                product_sku = product_form.cleaned_data['sku']
+                color_choices  = request.POST.getlist('color')
+                size_choices  = request.POST.getlist('size')
+                
+                variations = []  # to store combinations temporarily
 
                 for color_id in color_choices:
                     for size_id in size_choices:
                         try:
                             color = Color.objects.get(id=color_id)
                             size = Size.objects.get(id=size_id)
-
+                            
+                            variations.append({
+                                'product_name': product_name,
+                                'sku': product_sku,
+                                'color': color,
+                                'size': size,
+                                'quantity': request.POST.get('quantity'),
+                                'price': request.POST.get('price'),
+                                'image': request.FILES.get('image')
+                            })
                         except (Color.DoesNotExist, Size.DoesNotExist):
                             continue
 
-                        # Create ProductVariation instances
-                        ProductVariation.objects.create(
-                            product=product,
-                            color=color,
-                            size=size,
-                            quantity=request.POST.get('quantity'),
+                # Render the page with the variations, not yet saved to DB
+                return render(request, 'myapp/create_product.html', {
+                    'product_form': product_form,
+                    'variations': variations
+                })
+
+        elif 'save' in request.POST:  # Save button clicked
+            product_form = ProductForm(request.POST)
+            if product_form.is_valid():
+                # Save the product instance
+                product = product_form.save()
+
+                # Process the variations and save them
+                color_choices = request.POST.getlist('color')
+                size_choices = request.POST.getlist('size')
+                
+                for color_id in color_choices:
+                    for size_id in size_choices:
+                        try:
+                            color = Color.objects.get(id=color_id)
+                            size = Size.objects.get(id=size_id)
                             
+                            ProductVariation.objects.create(
+                                product=product,
+                                color=color,
+                                size=size,
+                                quantity=request.POST.get('quantity'),
+                                price=request.POST.get('price'),
+                                image=request.FILES.get('image'),
+                            )
+                        except (Color.DoesNotExist, Size.DoesNotExist):
+                            continue
 
-                            price=request.POST.get('price'),
-                            image=request.FILES.get('image'),
-                        )
-
-                return redirect('product_list')  # Redirect after saving
-
-        elif 'list' in request.POST:  # List button clicked
-            return redirect('product_list')  # Show all products with variations
-
-        elif 'search' in request.POST:  # Search functionality clicked
-            return search_product_variations(request)  # Call search function
-
-        elif 'export_csv' in request.POST:  # Export CSV clicked
-            return export_csv(request)  # Export the filtered variations to CSV
+                return redirect('product_list')
 
     else:
         product_form = ProductForm()
 
-    # Render the form for creating a product
-    return render(request, 'myapp/create_product.html', {
-        'product_form': product_form,
-        'colors': Color.objects.all(),
-        'sizes': Size.objects.all(),
-    })
+    return render(request, 'myapp/create_product.html',
+                  {'product_form': product_form,
+                   'colors': Color.objects.all(),
+                    'sizes': Size.objects.all(),})
+
+
+# View for Creating Product
+# def create_product(request):
+#     if request.method == 'POST':
+#         if 'save' in request.POST:  # Save button clicked
+#             product_form = ProductForm(request.POST)
+#             if product_form.is_valid():
+#                 # Save the product instance
+#                 product = product_form.save()
+
+#                 # Process product variations (colors and sizes)
+#                 color_choices = request.POST.getlist('color')
+#                 size_choices = request.POST.getlist('size')
+#                 print(f"color={color_choices}/ size={size_choices}")
+
+#                 for color_id in color_choices:
+#                     for size_id in size_choices:
+#                         try:
+#                             color = Color.objects.get(id=color_id)
+#                             size = Size.objects.get(id=size_id)
+
+#                         except (Color.DoesNotExist, Size.DoesNotExist):
+#                             continue
+
+#                         # Create ProductVariation instances
+#                         ProductVariation.objects.create(
+#                             product=product,
+#                             color=color,
+#                             size=size,
+#                             quantity=request.POST.get('quantity'),
+                            
+
+#                             price=request.POST.get('price'),
+#                             image=request.FILES.get('image'),
+#                         )
+
+#                 return redirect('product_list')  # Redirect after saving
+
+#         elif 'list' in request.POST:  # List button clicked
+#             return redirect('product_list')  # Show all products with variations
+
+#         elif 'search' in request.POST:  # Search functionality clicked
+#             return search_product_variations(request)  # Call search function
+
+#         elif 'export_csv' in request.POST:  # Export CSV clicked
+#             return export_csv(request)  # Export the filtered variations to CSV
+
+#     else:
+#         product_form = ProductForm()
+
+#     # Render the form for creating a product
+#     return render(request, 'myapp/create_product.html', {
+#         'product_form': product_form,
+#         'colors': Color.objects.all(),
+#         'sizes': Size.objects.all(),
+#     })
 
 # View for Listing Products and their Variations
 def product_list(request):
