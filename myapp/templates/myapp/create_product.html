@@ -1,54 +1,52 @@
-{% extends "myapp/base.html" %}
-{% load crispy_forms_tags %}
-
-{% block content %}
+{% extends "myapp/base.html" %} {% load crispy_forms_tags %} {% block content %}
 <h2>Create Product</h2>
 
 <form method="POST" id="product-form" enctype="multipart/form-data">
-    {% csrf_token %}
+  {% csrf_token %}
 
-    <button class="btn btn-primary" type="submit" name="save">Save</button>
-    <button class="btn btn-primary" type="button">Delete</button>
-    <button id="cancel-button" class="btn btn-primary">Cancel</button>
-    <a href="{% url 'product_list'%}" name="list" class="btn btn-primary">
-      List
+  <button class="btn btn-primary" type="submit" name="save">Save</button>
+  <!-- <button class="btn btn-primary" type="button">Delete</button> -->
+  <button id="cancel-button" class="btn btn-primary">Cancel</button>
+  <a href="{% url 'product_list'%}" name="list" class="btn btn-primary">
+    List
   </a>
-  <br><br>
+  <br /><br />
   <!-- {{ product_form|crispy }} -->
 
   <div class="row">
-    <div class="col-md-6 mb-0">
-      {{ product_form.name|as_crispy_field }}
-    </div>
-    <div class="col-md-6 mb-0">
-      {{ product_form.sku|as_crispy_field }}
-    </div>
+    <div class="col-md-6 mb-0">{{ product_form.name|as_crispy_field }}</div>
+    <div class="col-md-6 mb-0">{{ product_form.sku|as_crispy_field }}</div>
   </div>
 
   <div class="row">
-
     <div class="col-md-6 mb-0">
-        <label for="color">Select Color:</label>
-        <select name="color" id="color" class="form-select" multiple>
-            {% for color in colors %}
-            <option value="{{ color.id }}">{{ color.name }}</option>
-            {% endfor %}
-        </select>
+      <label for="color">Select Color:</label>
+      <select name="color" id="color" class="form-select" multiple>
+        {% for color in product_form.colors.field.queryset %}
+        <option
+          value="{{ color.id }}" {% if color.id in product_form.colors.value %} selected {% endif %}>
+          {{ color.name }}
+        </option>
+        {% endfor %}
+      </select>
     </div>
 
     <div class="col-md-6 mb-0">
-        <label for="color">Select Size:</label>
-        <select name="size" id="size" class="form-select" multiple>
-            {% for size in sizes %}
-            <option value="{{ size.id }}">{{ size.name }}</option>
-            {% endfor %}
-        </select>
+      <label for="color">Select Size:</label>
+      <select name="size" id="size" class="form-select" multiple>
+        {% for size in product_form.sizes.field.queryset %}
+        <option
+          value="{{ size.id }}" {% if size.id in product_form.sizes.value %} selected {% endif %}>
+          {{ size.name }}
+        </option>
+        {% endfor %}
+      </select>
     </div>
-</div>
-<br>
+  </div>
+  <br />
 
-<div class="row">
-  <div class="col-md-6 mb-0">
+  <div class="row">
+    <!-- <div class="col-md-6 mb-0">
 
     <label for="image"> Product Image: </label>
     <input class="form-control" type="file" id="formFile" name="image"> <br>
@@ -58,20 +56,23 @@
     
     <label for="price"> Price: </label>
     <input name="price" class="form-control" type="number" placeholder="Price" aria-label="default input example">
+  </div> -->
+
+    <div class="col-md-6 mb-0">
+      {{ product_form.description|as_crispy_field }}
+    </div>
   </div>
+  <br />
+  <button class="btn btn-primary" type="submit" name="generate">
+    Generate
+  </button>
 
-      <div class="col-md-6 mb-0">
-        {{ product_form.description|as_crispy_field }}
-      </div>
-</div>
-<br>
-<button class="btn btn-primary" type="submit" name="generate"> Generate</button>
-
-<div id="variations-table">
-<h3>Generated Product Variations</h3>
-<table class="table table-striped table-bordered">
-  <thead class="font-weight-bold table-primary">
-      <tr>
+  <div id="variations-table">
+    {% if variations %}
+    <h3>Generated Product Variations</h3>
+    <table class="table table-striped table-bordered">
+      <thead class="font-weight-bold table-primary">
+        <tr>
           <th>Product Name</th>
           <th>SKU</th>
           <th>Color</th>
@@ -80,134 +81,60 @@
           <th>Price</th>
           <th>Image</th>
           <th>Edit</th>
-      </tr>
-  </thead>
-  <tbody>
-      {% for variation in variations %}
-          <tr>
-              <td>{{ variation.product_name }}</td>
-              <td>{{ variation.sku }}</td>
-              <td>{{ variation.color.name }}</td>
-              <td>{{ variation.size.name }}</td>
-              <td>
-                  <input type="number" name="quantity_{{ forloop.counter }}" value="{{ variation.quantity }}">
-              </td>
-              <td>
-                  <input type="number" name="price_{{ forloop.counter }}" value="{{ variation.price }}">
-              </td>
-              <td>
-                  <input type="file" name="image_{{ forloop.counter }}">
-              </td>
-              <td>
-                  <!-- Button to trigger edit logic for this row -->
-                  <button type="button" class="btn btn-warning edit-btn">Edit</button>
-              </td>
-          </tr>
-      {% endfor %}
-  </tbody>
-</table>
-</div>
-
-</form>
-<hr><br>
-
-<!-- Search Form -->
-<h3>Search Product Variations</h3>
-<form method="POST" name="searchAndExport">
-  {% csrf_token %}
-  <div class="row">
-    <div class="col-md-4">
-      <input type="text" name="search_name" value="{{ search_name }}" placeholder="Search by Product Name" class="form-control">
-    </div>
-    <div class="col-md-4">
-      <select name="search_color" id="color" class="form-select" multiple>
-        {% for color in colors %}
-        <option value="{{ color.id }}">{{ color.name }}</option>
-        {% endfor %}
-    </select> </div>
-
-    <div class="col-md-4">
-    <select name="search_size" id="size" class="form-select" multiple>
-      {% for size in sizes %}
-      <option value="{{ size.id }}">{{ size.name }}</option>
-      {% endfor %}
-  </select>
-
-      <!-- <input type="text" name="search_color" value="{{ search_color }}" placeholder="Search by Color" class="form-control"> -->
-    </div>
-    <!-- <div class="col-md-4">
-      <input type="text" name="search_size" value="{{ search_size }}" placeholder="Search by Size" class="form-control">
-    </div> -->
-
-  </div>
-  <br>
-
-  <button class="btn btn-outline-primary" type="submit" name="search"> Search</button>
-  <input type="submit"  name="export_csv" class="btn btn-outline-success" value="Export">
-
-</form>
-<br>
-
-{% if variations %}
-    <h3>Search Results</h3>
-    <table class="table table-striped table-bordered">
-      <thead class="font-weight-bold table-primary">
-        <tr>
-                <th>No</th>
-                <th>Product Name</th>
-                <th>Image</th>
-                <th>SKU</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Color</th>
-                <th>Size</th>
-                <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for variation in variations %}
-            <td>{{ forloop.counter }}</td>
-            <td>{{ variation.product.name }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
-            <td>  {% if variation.image %}
-                <img src="{{ variation.image.url}}" style="width: 50px; height: auto;" alt="Product Photo">
-                {% else %}
-                <span>No image</span>
-                {% endif %}</td>
-
-            <td>{{ variation.product.sku }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
-            <td>{{ variation.quantity }}</td>
-            <td>{{ variation.price }}</td>
-            <td>{{ variation.color.name }}</td>
-            <td>{{ variation.size.name }}</td>
-            <td>
-              <a href="#" class="btn text-secondary px-0">
-                <i class="far fa-edit fa-lg"></i>
-            </a>
-            <form action="#" method="post" class="d-inline" 
-            onclick="return confirm('Are you sure you want to delete this stock?');">
-                {% csrf_token %}
-                <button type="submit" class="btn">
-                    <i class="far fa-trash-alt fa-lg text-danger float-right"></i>
-                </button>
-            </form>
-            </td>
-          </tr>
+        <tr>
+          <td>{{ variation.product_name }}</td>
+          <td>{{ variation.sku }}</td>
+          <td>{{ variation.color_name }}</td>
+          <td>{{ variation.size_name }}</td>
+          <td>
+            <input
+              type="number"
+              name="quantity_{{ forloop.counter }}"
+              value="{{ variation.quantity }}"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              name="price_{{ forloop.counter }}"
+              value="{{ variation.price }}"
+            />
+          </td>
+          <td>
+            <input type="file" name="image_{{ forloop.counter }}" />
+          </td>
+          <td>
+            <button
+              class="d-inline"
+              type="submit"
+              name="delete_variation"
+              value="{{ forloop.counter }}"
+            >
+              <i class="far fa-trash-alt fa-lg text-danger float-right"></i>
+            </button>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
+      {% endif %}
     </table>
-
-{% else %}
-<h5>Product Not Found!!</h5>
-{% endif %}
+  </div>
+</form>
 
 <script>
   // Cancel button logic
-  document.getElementById('cancel-button').addEventListener('click', function() {
+  document
+    .getElementById("cancel-button")
+    .addEventListener("click", function () {
       // Hide the variations table
-      document.getElementById('variations-table').style.display = 'none';
-      
+      document.getElementById("variations-table").style.display = "none";
+
       // Reset the form with the ID "product-form"
-      document.getElementById('product-form').reset();
-  });
+      document.getElementById("product-form").reset();
+    });
 </script>
 {% endblock %}

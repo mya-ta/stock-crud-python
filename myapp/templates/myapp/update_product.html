@@ -1,40 +1,36 @@
-{% extends 'myapp/base.html' %}
-{% load crispy_forms_tags %}
+{% extends 'myapp/base.html' %} {% load crispy_forms_tags %} {% block content %}
 
-{% block content %}
+<form method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
+  <h2>Update Product</h2>
+  <button class="btn btn-outline-primary" type="submit">Save Changes</button>
+  {% if category == 'parent'%}
+  <a href="{% url 'product_list' %}" class="btn btn-outline-secondary"
+    >Cancel</a
+  >
+  {% else %}
+  <a href="{% url 'child_list' %}" class="btn btn-outline-secondary">Cancel</a>
+  {% endif %}
 
-        <h2>Update Product</h2>
-        <button class="btn btn-outline-primary" type="submit">Save Changes</button>
-        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Cancel</a>
-
-    <fieldset>
-        <legend>Product Details</legend>    
+  <fieldset>
+    <legend>Product Details</legend>
 
     <div class="row">
-        <div class="col-md-6 mb-0">
-          {{ product_form.name|as_crispy_field }} </div>
-        <div class="col-md-6 mb-0">
-          {{ product_form.sku|as_crispy_field }} </div>
-        <div class="col-md-6 mb-0">
-            {{ product_form.description|as_crispy_field }} </div>
-
-        <div class="col-md-6 mb-0">
-            {{ productVari_form.image|as_crispy_field }}
-            {{ productVari_form.quantity|as_crispy_field }}
-            {{ productVari_form.price|as_crispy_field }}
-
-            <!-- <input class="form-control" type="file" id="formFile" name="image" accept="media/product_images/*"> <br>
-            <input name="price" class="form-control" type="number" placeholder="Price" aria-label="default input example">
-            <input name="quantity" class="form-control" type="number" placeholder="Quantity" aria-label="default input example"> -->
-
-        </div>
-
+      <div class="col-md-6 mb-0">{{ product_form.name|as_crispy_field }}</div>
+      <div class="col-md-6 mb-0">{{ product_form.sku|as_crispy_field }}</div>
+      <div class="col-md-6 mb-0">
+        {{ product_form.description|as_crispy_field }}
+      </div>
+      {% if category == 'child' %}
+      <div class="col-md-6 mb-0">
+        {{ productVari_form.image|as_crispy_field }}
+        {{productVari_form.quantity|as_crispy_field }}
+        {{productVari_form.price|as_crispy_field }}
+      </div>
+      {% endif %}
     </div>
-</fieldset>
-
-    </form>
+  </fieldset>
+</form>
 
 {% endblock %}

@@ -1,0 +1,115 @@
+{% extends "myapp/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- Search Form -->
+<h3>Search Product Variations</h3>
+<form method="POST" name="search-form">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-md-4">
+      <input type="text" name="search_name" value="{{ search_name }}" placeholder="Search by Product Name"
+        class="form-control">
+    </div>
+    <div class="col-md-4">
+      <select name="search_color" id="color" class="form-select" multiple>
+
+        {% for color in product_form.colors.field.queryset %}
+        <option value="{{ color.id }}" {% if color.id in product_form.colors.value %} selected {% endif %}>
+          {{ color.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <select name="search_size" id="size" class="form-select" multiple>
+        {% for size in product_form.sizes.field.queryset %}
+        <option value="{{ size.id }}" {% if size.id in product_form.sizes.value %} selected {% endif %}>
+          {{ size.name }}
+        </option>
+        {% endfor %}
+      </select>
+
+    </div>
+
+
+  </div>
+  <br>
+
+  <button class="btn btn-outline-primary" type="submit" name="search"> Search</button>
+  <button class="btn btn-outline-primary" id="cancel-button1" type="submit" name="cancel"> Cancel</button>
+
+  <!-- <input type="submit" name="export_csv" class="btn btn-outline-success" value="Export"> -->
+
+</form>
+<br>
+{% if result == True %}
+<h3>Search Results</h3>
+<hr>
+
+<a href="{% url 'export_csv' %}" name="export_csv" class="btn btn-primary">Export</a>
+<br><br>
+<table id="variations-table" class="table table-striped table-bordered">
+  <thead class="font-weight-bold table-primary">
+    <tr>
+      <th>No</th>
+      <th>Product Name</th>
+      <th>Image</th>
+      <th>SKU</th>
+      <th>Qty</th>
+      <th>Price</th>
+      <th>Color</th>
+      <th>Size</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for variation in variations %}
+    <td>{{ forloop.counter }}</td>
+    <td>{{ variation.product.name }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
+    <td> {% if variation.image %}
+      <img src="{{ variation.image.url}}" style="width: 50px; height: auto;" alt="Product Photo">
+      {% else %}
+      <span>No image</span>
+      {% endif %}
+    </td>
+
+    <td>{{ variation.product.sku }}-{{ variation.color.code }}-{{ variation.size.code }}</td>
+    <td>{{ variation.quantity }}</td>
+    <td>{{ variation.price }}</td>
+    <td>{{ variation.color.name }}</td>
+    <td>{{ variation.size.name }}</td>
+    <td>
+      <a href="{% url 'update_product' variation.id 'child' %}" class="btn text-secondary px-0">
+        <i class="far fa-edit fa-lg"></i>
+      </a>
+      <form action="{% url 'delete_product' variation.id 'child' %}" method="post" class="d-inline"
+        onclick="return confirm('Are you sure you want to delete this stock?');">
+        {% csrf_token %}
+        <button type="submit" class="btn">
+          <i class="far fa-trash-alt fa-lg text-danger float-right"></i>
+        </button>
+      </form>
+    </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if result == False %}
+  <h5>Product Not Found!!</h5>
+{% endif %}
+
+<script>
+  // Cancel button logic
+  document.getElementById('cancel-button1').addEventListener('click', function () {
+    // Hide the variations table
+    document.getElementById('variations-table').style.display = 'none';
+
+    // Reset the form with the ID "product-form"
+    document.getElementById('search-form').reset();
+  });
+</script>
+{% endblock %}
