@@ -3,11 +3,11 @@
 
 <form method="POST" id="product-form" enctype="multipart/form-data">
   {% csrf_token %}
-
-  <button class="btn btn-primary" type="submit" name="save">Save</button>
+  <br>
+  <button class="btn btn-outline-success" type="submit" name="save">Save</button>
   <!-- <button class="btn btn-primary" type="button">Delete</button> -->
-  <button id="cancel-button" class="btn btn-primary">Cancel</button>
-  <a href="{% url 'product_list'%}" name="list" class="btn btn-primary">
+  <button id="cancel-button" class="btn btn-outline-secondary">Cancel</button>
+  <a href="{% url 'product_list'%}" name="list" class="btn btn-outline-primary">
     List
   </a>
   <br /><br />
@@ -23,8 +23,7 @@
       <label for="color">Select Color:</label>
       <select name="color" id="color" class="form-select" multiple>
         {% for color in product_form.colors.field.queryset %}
-        <option
-          value="{{ color.id }}" {% if color.id in product_form.colors.value %} selected {% endif %}>
+        <option value="{{ color.id }}" {% if color.id in product_form.colors.value %} selected {% endif %}>
           {{ color.name }}
         </option>
         {% endfor %}
@@ -35,8 +34,7 @@
       <label for="color">Select Size:</label>
       <select name="size" id="size" class="form-select" multiple>
         {% for size in product_form.sizes.field.queryset %}
-        <option
-          value="{{ size.id }}" {% if size.id in product_form.sizes.value %} selected {% endif %}>
+        <option value="{{ size.id }}" {% if size.id in product_form.sizes.value %} selected {% endif %}>
           {{ size.name }}
         </option>
         {% endfor %}
@@ -91,29 +89,16 @@
           <td>{{ variation.color_name }}</td>
           <td>{{ variation.size_name }}</td>
           <td>
-            <input
-              type="number"
-              name="quantity_{{ forloop.counter }}"
-              value="{{ variation.quantity }}"
-            />
+            <input type="number" name="quantity_{{ forloop.counter }}" value="{{ variation.quantity }}" />
           </td>
           <td>
-            <input
-              type="number"
-              name="price_{{ forloop.counter }}"
-              value="{{ variation.price }}"
-            />
+            <input type="number" name="price_{{ forloop.counter }}" value="{{ variation.price }}" />
           </td>
           <td>
             <input type="file" name="image_{{ forloop.counter }}" />
           </td>
           <td>
-            <button
-              class="d-inline"
-              type="submit"
-              name="delete_variation"
-              value="{{ forloop.counter }}"
-            >
+            <button class="d-inline" type="submit" name="delete_variation" value="{{ forloop.counter }}">
               <i class="far fa-trash-alt fa-lg text-danger float-right"></i>
             </button>
           </td>

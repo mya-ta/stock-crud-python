@@ -1,5 +1,7 @@
 #### History
 
+9th > OK: CRUD according to review comment  
+
 8th > OK: CRUD for all  
 
 mini-1 > OK: can show table for Generated Product Variations/ just show table, not yet save to db

@@ -1,36 +1,323 @@
-{% extends 'myapp/base.html' %} {% load crispy_forms_tags %} {% block content %}
+{% extends 'myapp/base.html' %} {% load crispy_forms_tags %}
 
-<form method="POST" enctype="multipart/form-data">
+{% block content %}
+
+<form method="POST" id="table-form" enctype="multipart/form-data">
   {% csrf_token %}
 
   <h2>Update Product</h2>
+  <br>
   <button class="btn btn-outline-primary" type="submit">Save Changes</button>
-  {% if category == 'parent'%}
-  <a href="{% url 'product_list' %}" class="btn btn-outline-secondary"
-    >Cancel</a
-  >
-  {% else %}
-  <a href="{% url 'child_list' %}" class="btn btn-outline-secondary">Cancel</a>
-  {% endif %}
+  <button class="btn btn-outline-danger" type="submit" name="delete">Delete</button>
+
+  <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Cancel</a>
 
   <fieldset>
-    <legend>Product Details</legend>
+    <br>
+    <!-- <legend>Product Details</legend> -->
 
     <div class="row">
       <div class="col-md-6 mb-0">{{ product_form.name|as_crispy_field }}</div>
       <div class="col-md-6 mb-0">{{ product_form.sku|as_crispy_field }}</div>
       <div class="col-md-6 mb-0">
+
+        <label for="colors">Select Colors:</label>
+        <select name="colors" id="color" class="form-select" multiple>
+          {% for color in product_form.colors.field.queryset %}
+          <option value="{{ color.name }}" {% if color.id in product_form.colors.value %} selected {% endif %}>
+            {{ color.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6 mb-0">
+        <label for="color">Select Size:</label>
+        <select name="sizes" id="size" class="form-select" multiple>
+          {% for size in product_form.sizes.field.queryset %}
+          <option value="{{ size.name }}" {% if size.id in product_form.sizes.value %} selected {% endif %}>
+            {{ size.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6 mb-0">
         {{ product_form.description|as_crispy_field }}
       </div>
-      {% if category == 'child' %}
-      <div class="col-md-6 mb-0">
-        {{ productVari_form.image|as_crispy_field }}
-        {{productVari_form.quantity|as_crispy_field }}
-        {{productVari_form.price|as_crispy_field }}
-      </div>
-      {% endif %}
     </div>
   </fieldset>
-</form>
+  <br>
+  <div id="showed_table">
+    <h3> Product Variations</h3>
+    <table class="table table-striped table-bordered ">
 
+      <thead class="font-weight-bold table-primary">
+        <tr>
+          <th>No</th>
+          <!-- <th>ID</th> -->
+          <th style="white-space: nowrap;">Product Name</th>
+          <th>SKU</th>
+          <th>Color</th>
+          <th>Size</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Image</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+        <!-- Rows will be dynamically added here -->
+      </tbody>
+    </table>
+    <!-- Hidden inputs for each row data -->
+    <div id="hidden-data-container"></div>
+  </div>
+
+
+  <script>
+
+    // console.log('Existing variation:', existingVariations);
+
+
+  </script>
+
+
+  <script>
+    const colors = JSON.parse('{{ colorsobj|escapejs }}');
+    const sizes = JSON.parse('{{ sizesobj|escapejs }}');
+
+    function changeColorandSize(colorname = '', sizename = '') {
+      const colorMatch = colors.find(color => color.name === colorname);
+      const sizeMatch = sizes.find(size => size.name === sizename);
+      const result = colorMatch ? colorMatch.code : sizeMatch.code;
+      return result;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const colorSelect = document.getElementById('color');
+      const sizeSelect = document.getElementById('size');
+      const resultsBody = document.getElementById('results-body');
+
+      const existingVariations = JSON.parse('{{ variations|escapejs }}');
+      const existingProduct = JSON.parse('{{ product_dict|escapejs }}');
+
+      console.log('Existing Variations:', existingVariations);
+
+      function updateRowCounters() {
+        const rows = resultsBody.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+          const counterCell = row.querySelector('td'); // Get the first cell (counter cell)
+          if (counterCell) {
+            counterCell.textContent = index + 1; // Update the counter based on the row index
+          }
+        });
+      }
+      /**
+       * Generate a table row for a color-size combination
+       */
+      function generateTableRow(counter, product_name, product_sku, color, size, quantity = 0, price = 0.0, image) {
+        const dataTable = document.getElementById('showed_table');
+        dataTable.style.display = 'block';
+
+        const rowId = `${color}-${size}`;
+        if (document.getElementById(rowId)) {
+          // Row already exists, skip creating it
+          return;
+        }
+
+        const row = document.createElement('tr');
+        row.id = rowId;
+
+        const counterCell = document.createElement('td');
+        counterCell.textContent = counter;
+
+        const productnameCell = document.createElement('td');
+        productnameCell.textContent = `${product_name}-${changeColorandSize(color)}-${changeColorandSize('', size)}`;
+
+        const productskuCell = document.createElement('td');
+        productskuCell.textContent = `${product_sku}-${changeColorandSize(color)}-${changeColorandSize('', size)}`;
+
+        const colorCell = document.createElement('td');
+        colorCell.textContent = color;
+
+        const sizeCell = document.createElement('td');
+        sizeCell.textContent = size;
+
+        const quantityCell = document.createElement('td');
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.name = `quantity_${color}_${size}`;
+        quantityInput.value = quantity;
+        quantityInput.min = 0;
+        quantityInput.style.width = '150px';
+
+        quantityCell.appendChild(quantityInput);
+
+        const priceCell = document.createElement('td');
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.name = `price_${color}_${size}`;
+        priceInput.value = price;
+        priceInput.min = 0;
+        priceInput.style.width = '150px';
+
+        priceCell.appendChild(priceInput);
+
+        // Check if an existing image exists for this color-size combination
+        const imageCell = document.createElement('td');
+        imageCell.style.display = 'flex';
+        imageCell.style.alignItems = 'center'; // Center items vertically
+
+        const mediaUrl = '{{ MEDIA_URL }}';
+        const imageUrl = mediaUrl + image;
+
+        const imageInput = document.createElement('input');
+        imageInput.type = 'file';
+        imageInput.name = `image_${color}_${size}`;
+        imageInput.style.width = '280px'; // Set image size
+        imageCell.appendChild(imageInput);
+
+        if (image) {
+          console.log('Image URL:', imageUrl);
+          const imagePreview = document.createElement('img');
+          imagePreview.src = imageUrl; // Set the image source
+          imagePreview.alt = `image`;
+          imagePreview.style.width = '50px'; // Set image size
+          imagePreview.style.height = '50px';
+          imagePreview.style.display = 'block'; // Display the image above the input
+          imageCell.appendChild(imagePreview);
+        }
+
+        // Create delete button with icon
+        const deleteCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.style.border = 'none';
+        deleteButton.style.background = 'none';
+        deleteButton.style.cursor = 'pointer';
+
+        // Create the <i> element for the trash icon (Font Awesome)
+        const deleteIcon = document.createElement('i');
+        deleteIcon.classList.add('fa', 'fa-trash-alt');
+        deleteIcon.style.color = 'red'; // Set the icon color to red
+        deleteIcon.style.fontSize = '18px'; // Adjust size of the icon
+        deleteButton.appendChild(deleteIcon);
+
+        deleteButton.addEventListener('click', () => {
+          row.remove(); // Remove the entire row when clicked
+          updateRowCounters(); // Update row counters when a new row is added
+
+        });
+
+        deleteCell.appendChild(deleteButton);
+
+        // Append all the cells to the row
+        row.appendChild(counterCell);
+        row.appendChild(productnameCell);
+        row.appendChild(productskuCell);
+        row.appendChild(colorCell);
+        row.appendChild(sizeCell);
+        row.appendChild(quantityCell);
+        row.appendChild(priceCell);
+        row.appendChild(imageCell);
+        row.appendChild(deleteCell); // Add delete column
+
+        resultsBody.appendChild(row);
+        updateRowCounters(); // Update row counters when a new row is added
+
+      }
+
+      /**
+       * Display all existing variations when the page loads
+       */
+      function displayExistingVariations() {
+        const dataTable = document.getElementById('showed_table');
+        if (dataTable) {
+          console.log('Hiding the table since there are no variations');
+        } else {
+          console.log('Table with ID "showed_table" not found');
+        }
+        if (dataTable && existingVariations.length === 0) {
+          dataTable.style.display = 'none';
+        }
+        else {
+          existingVariations.forEach((variation, index) => {
+            var counter = index + 1;
+            generateTableRow(counter, variation.product__name, variation.product__sku, variation.color__name, variation.size__name, variation.quantity, variation.price, variation.image);
+          });
+        }
+      }
+
+      /**
+       * Generate new table rows for color-size combinations selected by the user
+       */
+      function generateTableRows() {
+        const selectedColors = Array.from(colorSelect.selectedOptions).map(option => option.value);
+        const selectedSizes = Array.from(sizeSelect.selectedOptions).map(option => option.value);
+
+        if (selectedColors.length === 0 || selectedSizes.length === 0) {
+          return;
+        }
+
+        selectedColors.forEach(color => {
+          selectedSizes.forEach((size, counter) => {
+            // Check if this color-size combination already exists in the existing variations
+            const existingVariation = existingVariations.find(variation =>
+              variation.color__name === color && variation.size__name === size
+            );
+
+            // If it doesn't exist in the existing variations, create a new row for it
+            if (!existingVariation) {
+              generateTableRow(counter, existingProduct.name, existingProduct.sku, color, size);
+            }
+          });
+        });
+      }
+      const tableForm = document.getElementById('table-form');
+      const hiddenDataContainer = document.getElementById('hidden-data-container');
+
+      // Function to collect table row data and populate hidden inputs
+      function collectTableData() {
+        console.log("Hello");
+        const rows = document.querySelectorAll('#results-body tr');
+        hiddenDataContainer.innerHTML = ''; // Clear previous data
+
+        rows.forEach((row, index) => {
+          const rowData = {
+            product_name: row.querySelector('[name^="product_name"]').value,
+            product_sku: row.querySelector('[name^="product_sku"]').value,
+            color: row.querySelector('[name^="color"]').value,
+            size: row.querySelector('[name^="size"]').value,
+            quantity: row.querySelector('[name^="quantity"]').value,
+            price: row.querySelector('[name^="price"]').value,
+            image: row.querySelector('[name^="image"]').files[0] ? row.querySelector('[name^="image"]').files[0].name : null,
+          };
+          console.log("Rows ===> ", row)
+          // Create hidden inputs for each row data
+          for (const [key, value] of Object.entries(rowData)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `row_${index}_${key}`;  // Unique name for each row data
+            input.value = value;
+            hiddenDataContainer.appendChild(input);
+          }
+        });
+      }
+
+      // Add event listener for form submission
+      tableForm.addEventListener('submit', function (event) {
+        collectTableData(); // Populate hidden fields before submitting the form
+      });
+
+      // Add event listeners to update the table whenever the selection changes
+      colorSelect.addEventListener('change', generateTableRows);
+      sizeSelect.addEventListener('change', generateTableRows);
+
+      // Initial call to display all existing variations
+      displayExistingVariations();
+    });
+
+  </script>
+  </body>
+
+</form>
 {% endblock %}

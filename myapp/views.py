@@ -5,7 +5,14 @@ from .models import Product, ProductVariation, Color, Size
 from .forms import ProductForm, ProductVariationForm, ProductVari_UpdateForm
 from django.db.models import Prefetch
 from django.http import HttpResponse
+import decimal
+from django.db.models import Q
+import json
+from django.core.serializers import serialize
+from django.conf import settings
+from django.forms.models import model_to_dict
 
+from django.db.models.fields.files import ImageFieldFile
 
 def create_product(request):
     product_form = ProductForm()
@@ -101,8 +108,6 @@ def create_product(request):
                 del request.session['temp_variations']
                 return redirect('product_list')
             
-        
-
     else:
         product_form = ProductForm()
 
@@ -112,68 +117,168 @@ def create_product(request):
 
 # View for Listing Products and their Variations
 def product_list(request):
-    # Fetch product variations with related Product, Color, and Size objects
-    products = Product.objects.all().order_by('-id')
-    return render(request, 'myapp/product_list.html', {'products': products})
-
-def child_list(request):
-    # Fetch product variations with related Product, Color, and Size objects
-    product_variations = ProductVariation.objects.select_related(
-        'product', 'color', 'size'
-    ).order_by('-product_id')
-
-    return render(request, 'myapp/child_list.html', {'product_variations': product_variations})
-
-def update_product(request, id, category):
-  
-    if category == 'child' : 
-        variation = get_object_or_404(ProductVariation, id=id)
-        product = variation.product
-        if request.method == "POST":
-            product_form = ProductForm(request.POST, instance=product)
-            productVari_form = ProductVariationForm(request.POST, request.FILES, instance=variation)
-            if product_form.is_valid() and productVari_form.is_valid():
-                
-                # Save the updated Product data
-                product = product_form.save()
  
-                new_image = request.FILES.get('image', None)
-                if new_image:
-                    variation.image = new_image
-                variation.price = productVari_form.cleaned_data.get('price', variation.price)
-                variation.quantity = productVari_form.cleaned_data.get('quantity', variation.quantity)
-                variation.save() # Save the updated fields in ProductVariation (only these fields)
-                return redirect('child_list')  # Redirect to the product list page after update
-            else:
-                # Log errors for debugging
-                print(product_form.errors)
-                print(productVari_form.errors)
-        else:
-            product_form = ProductForm(instance=product)
-            productVari_form = ProductVariationForm(instance=variation)
+    query = request.GET.get('q', '')  # Get the search query from the request (default is an empty string)
 
-    else: # if category == 'parent' : 
-        product = get_object_or_404(Product, id=id)
-        if request.method == 'POST' :
-            # Create the forms for both Product and ProductVariation
-            product_form = ProductForm(request.POST, instance=product)
+    # Filter the queryset using `icontains` to search across multiple fields
+    products = Product.objects.filter(
+        Q(name__icontains=query) | Q(sku__icontains=query) | Q(description__icontains=query)
+    ) if query else Product.objects.all()
     
-            if product_form.is_valid():
-                product = product_form.save()
-                return redirect('product_list')
-            else:
-                print(product_form.errors)
-        else: 
-            product_form = ProductForm(instance=product)
-            productVari_form = []
-            variation = []
+    if 'export' in request.GET:
+        return export_data(products)
+    
+    context = {
+        'products': products,
+        'query': query  # Pass the current search query back to the template
+    }
+    return render(request, 'myapp/product_list.html', context)
+
+def update_product(request, id):
+    product = get_object_or_404(Product, id=id)
+    colors = Color.objects.all().values('id', 'name', 'code')
+    sizes = Size.objects.all().values('id', 'name', 'code')
+    added_variations = set()  # Track variations we've already processed
+    processed_variations = set()  # Store IDs of processed variations
+
+    product_dict = {
+            'id': product.id,
+            'name': product.name,
+            'sku': product.sku,
+            'description': product.description,
+        }
+    if request.method == 'POST':
+        # Create the product form
+        product_form = ProductForm(request.POST, instance=product)
+        variations = []
+    
+        if 'delete' in request.POST:  # Generate button clicked
+            delete_product(request, id)
+            return redirect("product_list")
+
+        for key, value in request.POST.items():
+
+             # Check if the key contains color and size information
+            if key.startswith(('quantity_', 'price_','image_')):  # Tuple for startswith() 
+                parts = key.split('_')  # Expecting 'quantity_color_size' structure
+                if len(parts) >= 3:
+                    field_type, color_name, size_name = parts[:3]  # Unpack parts into field_type, color_name, size_name
+
+                    # Get or create color and size
+                    color, _ = Color.objects.get_or_create(name=color_name)
+                    size, _ = Size.objects.get_or_create(name=size_name)
+
+                    # Create or update the product variation
+                    variation, created = ProductVariation.objects.get_or_create(
+                        product=product, 
+                        color=color, 
+                        size=size,
+                        defaults={'quantity': 0, 'price': 0.0, 'image': None}
+                    )
+                    processed_variations.add(variation.id)
+
+                    # Update the variation fields
+                    if field_type == 'quantity':
+                        variation.quantity = value
+                        file_key = f'image_{color_name}_{size_name}'
+                        if file_key in request.FILES:
+                            print(f"Yes, '{file_key}' found in request.FILES with value: {request.FILES[file_key]}")
+                            variation.image = request.FILES[file_key]
+                        else:
+                            print(f"No, '{file_key}' not found in request.FILES. Available keys: {list(request.FILES.keys())}")
+                    
+
+                    elif field_type == 'price':
+                        variation.price = value
+                    
+                    variation.save()
+                    print(f"Save Variation-----------> {variation}")
+
+                    # Use a unique identifier for the variation
+                    variation_id = (color.id, size.id)
+                    if variation_id not in added_variations:
+                        variation_dict = {
+                                'color_id': color.id,
+                                'color__name': color.name,
+                                'color__code': color.code,
+                                'id': variation.id,
+                                'image': variation.image.url.strip('/media/') if variation.image else None,
+                                'price': float(variation.price) if isinstance(variation.price, decimal.Decimal) else variation.price,
+                                'product__name': variation.product.name,
+                                'product__sku': variation.product.sku,
+                                'product_id': variation.product.id,
+                                'quantity': variation.quantity,
+                                'size_id': size.id,
+                                'size__name': size.name,
+                                'size__code': size.code,
+                        }
+
+                        variations.append(variation_dict)
+                        added_variations.add(variation_id)
+
+        # **Delete variations that were not re-included**
+        ProductVariation.objects.filter(product=product).exclude(id__in=processed_variations).delete()
+        print(f"Deleted all unprocessed variations for product {product.name}")
+        
+        print(f"New Variations ==> {variations}")
+        # Save the product form if valid
+        if product_form.is_valid():
+            product_form.save()
+        return redirect('product_list')
+
+      
+    product_form = ProductForm(instance=product)
+    variations = ProductVariation.objects.filter(product_id=product.id).values(
+            'color', 'color_id', 'color__name', 'color__code', 'id', 'image', 'price',
+            'product__name', 'product__sku', 'product_id', 'quantity', 'size', 'size__name',
+            'size_id', 'size__code')
+        
+
+    # Get selected colors and sizes from query params
+    selected_colors = request.GET.getlist('colors', [])  # Colors selected
+    selected_sizes = request.GET.getlist('sizes', [])    # Sizes selected
+
+    # Build the filter query
+    filter_conditions = Q()
+
+    # If colors are selected, add filter for color
+    if selected_colors:
+        filter_conditions &= Q(color__id__in=selected_colors)
+
+    # If sizes are selected, add filter for size
+    if selected_sizes:
+        filter_conditions &= Q(size__id__in=selected_sizes)
+
+    # Apply the filter to the variations queryset if any conditions are present
+    if filter_conditions:
+        variations = variations.filter(filter_conditions)
+    variations = list(variations)  # Convert QuerySet to list
+    variations = decimal_and_image_to_serializable(variations)
+    print(f"Existing Variations ===> {variations}")
+
+    # Convert ProductVariation instances to dictionaries    
+
     return render(request, 'myapp/update_product.html', {
-        'product_form': product_form,
-        'productVari_form': productVari_form,
-        'variation': variation,
-        'product': product,
-        'category': category
-    })
+            'product_form': product_form,
+            'variations': json.dumps(variations),
+            'variation_data': variations,
+            'product_dict':  json.dumps(product_dict),
+            'product': product,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'colorsobj': json.dumps(list(colors)),
+            'sizesobj': json.dumps(list(sizes)),
+        })
+
+def decimal_and_image_to_serializable(obj):
+    if isinstance(obj, decimal.Decimal):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {key: decimal_and_image_to_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [decimal_and_image_to_serializable(item) for item in obj]
+    elif isinstance(obj, ImageFieldFile):  # Handle ImageFieldFile
+        return obj.url if obj else None  # Get URL or None if no image is present
+    return obj
 
 def delete_variation(request, id): # delete temp generated product
     product_form = ProductForm()
@@ -187,136 +292,39 @@ def delete_variation(request, id): # delete temp generated product
     return render(request, 'myapp/create_product.html', {
         'product_form': product_form,'variations': temp_variations})
 
-def delete_product(request, id, category): # Delete in list
-
-    if category == "parent":
+def delete_product(request, id): # Delete in list
+        
         product = get_object_or_404(Product, id = id)
-        product.delete()
-        return redirect ('product_list')
 
-    else: 
         # Get the ProductVariation object by ID
-        variation = get_object_or_404(ProductVariation, id=id)
-    
+        variation = ProductVariation.objects.filter(product=product)
+   
         # Delete the ProductVariation
         variation.delete()
-    
+
+        product.delete()
+
         # Redirect to the product list page
-        return redirect('child_list')
+        return redirect('product_list')
 
-def search_product(request):
-    variations = ''
-    search_name = ''
-    search_color = []
-    search_size = []
-    result = ''
+def export_data(products):
 
-    if request.method == "POST":
-        if 'cancel' in request.POST:
-            return render(request, 'myapp/search_product.html', {
-                'variations': '',
-                'product_form': ProductForm(),
-                'search_name': '',
-                'search_color': [],
-                'search_size': [],
-            })
-        
-        search_name = request.POST.get('search_name', '')
-        search_color = request.POST.getlist('search_color', [])
-        search_size = request.POST.getlist('search_size', [])
-
-        variations = ProductVariation.objects.all()
-
-        if search_name:
-            variations = variations.filter(product__name__icontains=search_name)
-        
-        if search_color:
-            variations = variations.filter(color__id__in=search_color)
-
-        if search_size:
-            variations = variations.filter(size__id__in=search_size)
-        
-        print(f"Before variation -> {variations}")
-
-        serialized_variations = list(variations.values('product__name', 'image', 'product__sku', 'quantity', 'price', 
-        'color__name', 'size__name', 'product__description'))
-
-        request.session['search_results'] = serialized_variations
-
-        if variations: 
-            result = True
-        else:
-            result = False
-
-    return render(request, 'myapp/search_product.html', {
-        'variations': variations,
-        'product_form': ProductForm(),
-        'search_name': search_name,
-        'search_color': search_color,
-        'search_size': search_size,
-        'result': result,
-    })
-
-    # # Serialize the variations queryset to a list of dictionaries (JSON format)
-    # serialized_variations = list(variations.values(
-    #     'product__name', 'image', 'product__sku', 'quantity', 'price', 
-    #     'color__name', 'size__name', 'product__description'
-    # ))
-
-    # # Store the serialized results in the session
-    # request.session['search_results'] = serialized_variations
-
-def export_data(request): # for all
-  
-    products = Product.objects.all()  # This fetches all Product objects
-
+    print(f"Export data ===> {products}")
+    # Prepare the response to download a CSV file
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="all_products.csv"'
-
+    response['Content-Disposition'] = 'attachment; filename="products.csv"'
     writer = csv.writer(response)
     
-    # Write the header row
+    # Write CSV headers
     writer.writerow(['Product Name', 'SKU', 'Description','Image', 'Quantity', 'Price', 'Color', 'Size' ])
     
-    # Write the data rows
+    # Write product data
     for product in products:
         writer.writerow([product.name, product.sku, product.description])
-        variations = product.variations.all()  # This gets all variations for each product
+        variations = ProductVariation.objects.filter(product=product)  # This gets all variations for each product
         for variation in variations:
             writer.writerow([variation.product.name, variation.product.sku,'', variation.image,  variation.quantity, variation.price, variation.color.name,
             variation.size.name])
 
     return response
 
-def export_csv(request): # for searched results
-
-    variations = request.session.get('search_results', [])
-    print(f"After variation -> {variations}")
-
-    # # Serialize the variations queryset to a list of dictionaries (JSON format)
-    
-
-    if not variations:
-        return HttpResponse("No data to export", status=400)
-    
-    # Create the HTTP response with the CSV file
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="product_variations.csv"'
-
-    writer = csv.writer(response)
-    
-    # Write the header row
-    writer.writerow(['Product Name', 'Image', 'SKU', 'Quantity', 'Price', 'Color', 'Size'])
-    # Write the data rows
-    for variation in variations:
-        writer.writerow([variation['product__name'], variation['image'], variation['product__sku'], 
-                         variation['quantity'], variation['price'], variation['color__name'],
-                         variation['size__name']])
-
-    # Write the data rows
-    # for variation in variations:
-    #     writer.writerow([variation.product.name, variation.image, variation.product.sku, 
-    #     variation.quantity, variation.price, variation.color.name,
-    #     variation.size.name, variation.product.description ])
-
-    return response
